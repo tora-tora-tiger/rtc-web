@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
 import "./ScreenShare.css";
 
-
 export function ScreenShare() {
   const [isConnected, setIsConnected] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
@@ -151,92 +150,86 @@ export function ScreenShare() {
       );
     }, 2000);
     // リモートユーザーがPeerConnectionにMediaStreamTrackを追加したら発火
-    pc.addEventListener("track", ({ track }) => {
-      console.log("🎬 トラックを受信しました", track);
+    if (pcRef.current) {
+      pcRef.current.addEventListener("track", ({ track }) => {
+        console.log("🎬 トラックを受信しました", track);
 
-      if (track.kind === "video") {
-        console.log("📹 映像トラックの処理を開始します");
-        const video = document.createElement("video");
-        video.playsInline = true;
-        video.muted = true;
-        video.style.width = "100%";
-        video.srcObject = new MediaStream([track]);
+        if (track.kind === "video") {
+          console.log("📹 映像トラックの処理を開始します");
+          const video = document.createElement("video");
+          video.playsInline = true;
+          video.muted = true;
+          video.style.width = "100%";
+          video.srcObject = new MediaStream([track]);
 
-        video
-          .play()
-          .then(() => {
-            console.log("✅ リモート映像の再生開始");
-            if (remoteVideosRef.current) {
-              remoteVideosRef.current.appendChild(video);
-              console.log("✅ 映像要素をDOMに追加しました");
-              console.log(
-                "📍 リモート映像要素数:",
-                remoteVideosRef.current.children.length
-              );
-            } else {
-              console.error("❌ remoteVideosRef.currentがnullです");
-            }
-          })
-          .catch((playError) => {
-            console.error("❌ リモート映像の再生エラー:", playError);
-          });
-      }
-
-      if (track.kind === "audio") {
-        console.log("🔊 音声トラックの処理を開始します");
-        const audio = document.createElement("audio");
-        audio.srcObject = new MediaStream([track]);
-
-        audio
-          .play()
-          .then(() => {
-            console.log("✅ リモート音声の再生開始");
-            if (remoteAudioRef.current) {
-              remoteAudioRef.current.appendChild(audio);
-              console.log("✅ 音声要素をremoteAudioRefに追加しました");
-              console.log(
-                "📍 リモート音声要素数:",
-                remoteAudioRef.current.children.length
-              );
-            } else {
-              console.error("❌ remoteAudioRef.currentがnullです");
-            }
-          })
-          .catch((playError) => {
-            console.error("❌ リモート音声の再生エラー:", playError);
-          });
-      }
-    });
-
-    // RTCPeerConnection.setLocalDescription()の呼び出しに応じて、
-    // ICE Candidateが見つかった時や収集が終了した際に発火
-    pc.addEventListener("icecandidate", ({ candidate }) => {
-      console.log("🧊 ICE Candidateイベントが発生しました");
-      if (candidate) {
-        console.log("📍 ICE Candidate:", candidate);
-        console.log("📍 Candidate Foundation:", candidate.foundation);
-        console.log("📍 Candidate Priority:", candidate.priority);
-        console.log("📍 Candidate IP:", candidate.address);
-        console.log("📍 Candidate Port:", candidate.port);
-        console.log("📍 Candidate Protocol:", candidate.protocol);
-        console.log("📍 Candidate Type:", candidate.type);
-
-        // ICE Candidateをリモートユーザーへ送信
-        console.log("📡 ICE Candidateを送信します");
-        console.log("📍 送信前のSocket接続状態:", socket.connected);
-        if (socketRef.current) {
-          socketRef.current.emit("ice", candidate);
-          console.log("✅ ICE Candidate送信完了");
-        } else {
-          console.error("❌ Socketが初期化されていません");
+          video
+            .play()
+            .then(() => {
+              console.log("✅ リモート映像の再生開始");
+              if (remoteVideosRef.current) {
+                remoteVideosRef.current.appendChild(video);
+                console.log("✅ 映像要素をDOMに追加しました");
+                console.log(
+                  "📍 リモート映像要素数:",
+                  remoteVideosRef.current.children.length
+                );
+              } else {
+                console.error("❌ remoteVideosRef.currentがnullです");
+              }
+            })
+            .catch((playError) => {
+              console.error("❌ リモート映像の再生エラー:", playError);
+            });
         }
-      } else {
-        console.log("🧊 ICE Candidate収集完了");
-        console.log("📍 PeerConnection状態:", pcRef.current?.connectionState);
-        console.log("📍 ICE接続状態:", pcRef.current?.iceConnectionState);
-        console.log("📍 ICE収集状態:", pcRef.current?.iceGatheringState);
-      }
-    });
+
+        if (track.kind === "audio") {
+          console.log("🔊 音声トラックの処理を開始します");
+          const audio = document.createElement("audio");
+          audio.srcObject = new MediaStream([track]);
+
+          audio
+            .play()
+            .then(() => {
+              console.log("✅ リモート音声の再生開始");
+              if (remoteAudioRef.current) {
+                remoteAudioRef.current.appendChild(audio);
+                console.log("✅ 音声要素をremoteAudioRefに追加しました");
+                console.log(
+                  "📍 リモート音声要素数:",
+                  remoteAudioRef.current.children.length
+                );
+              } else {
+                console.error("❌ remoteAudioRef.currentがnullです");
+              }
+            })
+            .catch((playError) => {
+              console.error("❌ リモート音声の再生エラー:", playError);
+            });
+        }
+      });
+
+      // RTCPeerConnection.setLocalDescription()の呼び出しに応じて、
+      // ICE Candidateが見つかった時や収集が終了した際に発火
+      pcRef.current.addEventListener("icecandidate", ({ candidate }) => {
+        console.log("🧊 ICE Candidateイベントが発生しました");
+        if (candidate) {
+          console.log("📍 ICE Candidate:", candidate);
+
+          // ICE Candidateをリモートユーザーへ送信
+          console.log("📡 ICE Candidateを送信します");
+          console.log("📍 送信前のSocket接続状態:", socket.connected);
+          if (socketRef.current) {
+            socketRef.current.emit("ice", candidate);
+            console.log("✅ ICE Candidate送信完了");
+          } else {
+            console.error("❌ Socketが初期化されていません");
+          }
+        } else {
+          console.log("🧊 ICE Candidate収集完了");
+          console.log("📍 PeerConnection状態:", pcRef.current);
+        }
+      });
+    }
 
     // Socket.ioイベントリスナーの設定
     socket.on("connect", () => {
@@ -285,22 +278,27 @@ export function ScreenShare() {
 
     socket.on("offer", async (desc) => {
       console.log("📥 Offerを受信しました", desc);
-      console.log("📍 受信時のPeerConnection状態:", pc);
+      console.log("📍 受信時のPeerConnection状態:", pcRef.current);
 
       try {
+        if (!pcRef.current) {
+          console.error("❌ RTCPeerConnectionが初期化されていません");
+          return;
+        }
+
         console.log("🤝 RemoteDescriptionを設定します");
-        await pc.setRemoteDescription(desc);
+        await pcRef.current.setRemoteDescription(desc);
         console.log("✅ RemoteDescription設定完了");
-        console.log("📍 PeerConnection状態:", pc.connectionState);
+        console.log("📍 PeerConnection状態:", pcRef.current.connectionState);
 
         console.log("🤝 Answerを生成します");
-        const answerDesc = await pc.createAnswer();
+        const answerDesc = await pcRef.current.createAnswer();
         console.log("✅ Answer生成成功:", answerDesc);
 
         console.log("🤝 LocalDescriptionを設定します");
-        await pc.setLocalDescription(answerDesc);
+        await pcRef.current.setLocalDescription(answerDesc);
         console.log("✅ LocalDescription設定完了");
-        console.log("📍 PeerConnection状態:", pc.connectionState);
+        console.log("📍 PeerConnection状態:", pcRef.current.connectionState);
 
         console.log("📡 Answerを送信します");
         console.log("📍 送信前のSocket接続状態:", socket.connected);
@@ -327,15 +325,23 @@ export function ScreenShare() {
         "📍 Answer SDP（先頭50文字）:",
         desc.sdp?.substring(0, 50) + "..."
       );
-      console.log("📍 受信時のPeerConnection状態:", pc.connectionState);
-      console.log("📍 受信時のICE接続状態:", pc.iceConnectionState);
+      console.log(
+        "📍 受信時のPeerConnection状態:",
+        pcRef.current?.connectionState
+      );
+      console.log("📍 受信時のICE接続状態:", pcRef.current?.iceConnectionState);
 
       try {
+        if (!pcRef.current) {
+          console.error("❌ RTCPeerConnectionが初期化されていません");
+          return;
+        }
+
         console.log("🤝 RemoteDescriptionを設定します");
-        await pc.setRemoteDescription(desc);
+        await pcRef.current.setRemoteDescription(desc);
         console.log("✅ RemoteDescription設定完了");
-        console.log("📍 PeerConnection状態:", pc.connectionState);
-        console.log("📍 ICE接続状態:", pc.iceConnectionState);
+        console.log("📍 PeerConnection状態:", pcRef.current.connectionState);
+        console.log("📍 ICE接続状態:", pcRef.current.iceConnectionState);
       } catch (error) {
         console.error("❌ Answer処理エラー:", error);
         if (error instanceof Error) {
@@ -349,15 +355,23 @@ export function ScreenShare() {
     socket.on("ice", async (candidate) => {
       console.log("📥 ICE Candidateを受信しました");
       console.log("📍 Candidate:", candidate);
-      console.log("📍 受信時のPeerConnection状態:", pc.connectionState);
-      console.log("📍 受信時のICE接続状態:", pc.iceConnectionState);
+      console.log(
+        "📍 受信時のPeerConnection状態:",
+        pcRef.current?.connectionState
+      );
+      console.log("📍 受信時のICE接続状態:", pcRef.current?.iceConnectionState);
 
       try {
+        if (!pcRef.current) {
+          console.error("❌ RTCPeerConnectionが初期化されていません");
+          return;
+        }
+
         console.log("🤝 ICE Candidateを追加します");
-        await pc.addIceCandidate(candidate);
+        await pcRef.current.addIceCandidate(candidate);
         console.log("✅ ICE Candidate追加完了");
-        console.log("📍 PeerConnection状態:", pc.connectionState);
-        console.log("📍 ICE接続状態:", pc.iceConnectionState);
+        console.log("📍 PeerConnection状態:", pcRef.current.connectionState);
+        console.log("📍 ICE接続状態:", pcRef.current.iceConnectionState);
       } catch (error) {
         console.error("❌ ICE Candidate追加エラー:", error);
         if (error instanceof Error) {
@@ -398,7 +412,7 @@ export function ScreenShare() {
       setIsSharing(false);
       console.log("🧹 クリーンアップ完了");
     };
-  });
+  }, []);
 
   return (
     <div className="screen-share-container">
@@ -438,4 +452,4 @@ export function ScreenShare() {
       </div>
     </div>
   );
-};
+}
