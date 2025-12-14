@@ -12,10 +12,33 @@ export function ScreenShare() {
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const socketRef = useRef<ReturnType<typeof io>>(null);
 
+  const stopScreenShare = async () => {
+    console.log("🛑 画面共有を停止します");
+
+    // ローカルストリームのトラックを停止
+    if (localStreamRef.current) {
+      console.log("📍 ローカルストリームのトラック数:", localStreamRef.current.getTracks().length);
+      localStreamRef.current.getTracks().forEach((track) => {
+        console.log("🛑 トラックを停止:", track.kind, track.label);
+        track.stop();
+      });
+      localStreamRef.current = null;
+    }
+
+    // ローカル映像をクリア
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = null;
+    }
+
+    // 画面共有状態をリセット
+    setIsSharing(false);
+    console.log("✅ 画面共有を停止しました");
+  };
+
   const onClickButtton = async () => {
-    // 画面共有中は何もしない
+    // 画面共有中の場合は停止処理
     if (isSharing) {
-      console.log("📹 画面共有中のため処理をスキップします");
+      await stopScreenShare();
       return;
     }
 
@@ -422,10 +445,9 @@ export function ScreenShare() {
 
       <button
         onClick={onClickButtton}
-        className="start-button"
-        disabled={isSharing}
+        className={`start-button ${isSharing ? "stop-button" : ""}`}
       >
-        {isSharing ? "画面共有中..." : "ビデオ通話を開始"}
+        {isSharing ? "画面共有を停止" : "ビデオ通話を開始"}
       </button>
 
       <div className="video-container">
