@@ -11,11 +11,7 @@ export function ScreenShare() {
   const remoteAudioRef = useRef<HTMLDivElement>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
-
-  const socket = io("http://localhost:3001", {
-    autoConnect: true, // 自動接続を有効化
-    transports: ["websocket", "polling"], // トランスポートを明示
-  });
+  const socketRef = useRef<ReturnType<typeof io>>(null);
 
   const onClickButtton = async () => {
     // 画面共有中は何もしない
@@ -25,23 +21,25 @@ export function ScreenShare() {
     }
 
     // 接続が確立されるまで待機
-    if (!socket.connected) {
+    if (!socketRef.current?.connected) {
       console.log("⏳ Socket接続を待機します...");
       let attempts = 0;
       const maxAttempts = 10;
 
-      while (!socket.connected && attempts < maxAttempts) {
-        socket.connect();
+      while (!socketRef.current?.connected && attempts < maxAttempts) {
+        if (socketRef.current) {
+          socketRef.current.connect();
+        }
         console.log(
           `📍 接続待機 ${attempts + 1}/${maxAttempts}: connected=${
-            socket.connected
+            socketRef.current?.connected || false
           }`
         );
         await new Promise((resolve) => setTimeout(resolve, 500));
         attempts++;
       }
 
-      if (!socket.connected) {
+      if (!socketRef.current?.connected) {
         alert("サーバーに接続できません。しばらくしてから再度お試しください。");
         return;
       }
@@ -106,9 +104,13 @@ export function ScreenShare() {
 
       // LocalDescriptionをリモートユーザーへ送信
       console.log("📡 Offerを送信します");
-      console.log("📍 送信前のSocket接続状態:", socket);
-      socket.emit("offer", desc);
-      console.log("✅ Offer送信完了");
+      console.log("📍 送信前のSocket接続状態:", socketRef.current);
+      if (socketRef.current) {
+        socketRef.current.emit("offer", desc);
+        console.log("✅ Offer送信完了");
+      } else {
+        console.error("❌ Socketが初期化されていません");
+      }
 
       // 画面共有状態を設定
       setIsSharing(true);
@@ -124,6 +126,14 @@ export function ScreenShare() {
   // Socket.io接続とイベントの設定
   useEffect(() => {
     console.log("🔌 Socket.io接続とイベントの設定を開始します");
+
+    // Socket.ioの初期化
+    const socket = io("http://localhost:3001", {
+      autoConnect: true, // 自動接続を有効化
+      transports: ["websocket", "polling"], // トランスポートを明示
+    });
+    socketRef.current = socket;
+
     // RTCPeerConnectionの初期化
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
@@ -214,8 +224,12 @@ export function ScreenShare() {
         // ICE Candidateをリモートユーザーへ送信
         console.log("📡 ICE Candidateを送信します");
         console.log("📍 送信前のSocket接続状態:", socket.connected);
-        socket.emit("ice", candidate);
-        console.log("✅ ICE Candidate送信完了");
+        if (socketRef.current) {
+          socketRef.current.emit("ice", candidate);
+          console.log("✅ ICE Candidate送信完了");
+        } else {
+          console.error("❌ Socketが初期化されていません");
+        }
       } else {
         console.log("🧊 ICE Candidate収集完了");
         console.log("📍 PeerConnection状態:", pcRef.current?.connectionState);
@@ -290,8 +304,12 @@ export function ScreenShare() {
 
         console.log("📡 Answerを送信します");
         console.log("📍 送信前のSocket接続状態:", socket.connected);
-        socket.emit("answer", answerDesc);
-        console.log("✅ Answer送信完了");
+        if (socketRef.current) {
+          socketRef.current.emit("answer", answerDesc);
+          console.log("✅ Answer送信完了");
+        } else {
+          console.error("❌ Socketが初期化されていません");
+        }
       } catch (error) {
         console.error("❌ Offer処理エラー:", error);
         if (error instanceof Error) {
@@ -360,6 +378,7 @@ export function ScreenShare() {
       clearInterval(connectionMonitor);
       console.log("✅ 接続状態監視を停止しました");
 
+      // Socketを切断
       socket.disconnect();
       console.log("✅ Socketを切断しました");
 
