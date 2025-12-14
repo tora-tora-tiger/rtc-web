@@ -5,6 +5,7 @@ import "./ScreenShare.css";
 
 export function ScreenShare() {
   const [isConnected, setIsConnected] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideosRef = useRef<HTMLDivElement>(null);
   const remoteAudioRef = useRef<HTMLDivElement>(null);
@@ -17,6 +18,12 @@ export function ScreenShare() {
   });
 
   const onClickButtton = async () => {
+    // 画面共有中は何もしない
+    if (isSharing) {
+      console.log("📹 画面共有中のため処理をスキップします");
+      return;
+    }
+
     // 接続が確立されるまで待機
     if (!socket.connected) {
       console.log("⏳ Socket接続を待機します...");
@@ -102,6 +109,10 @@ export function ScreenShare() {
       console.log("📍 送信前のSocket接続状態:", socket);
       socket.emit("offer", desc);
       console.log("✅ Offer送信完了");
+
+      // 画面共有状態を設定
+      setIsSharing(true);
+      console.log("✅ 画面共有を開始しました");
     } catch (error) {
       console.error("❌ メディアデバイスへのアクセスエラー:", error);
       if (error instanceof Error) {
@@ -363,6 +374,9 @@ export function ScreenShare() {
         });
         console.log("✅ すべてのメディアトラックを停止しました");
       }
+
+      // 画面共有状態をリセット
+      setIsSharing(false);
       console.log("🧹 クリーンアップ完了");
     };
   });
@@ -373,8 +387,12 @@ export function ScreenShare() {
         接続状態: {isConnected ? "接続中" : "切断中"}
       </div>
 
-      <button onClick={onClickButtton} className="start-button">
-        ビデオ通話を開始
+      <button
+        onClick={onClickButtton}
+        className="start-button"
+        disabled={isSharing}
+      >
+        {isSharing ? "画面共有中..." : "ビデオ通話を開始"}
       </button>
 
       <div className="video-container">
