@@ -373,7 +373,7 @@ export function ScreenShare() {
         接続状態: {isConnected ? "接続中" : "切断中"}
       </div>
 
-      <button onClick={onClickButtton} className="start-button">
+      <button type="button" onClick={onClickButtton} className="start-button">
         ビデオ通話を開始
       </button>
 
