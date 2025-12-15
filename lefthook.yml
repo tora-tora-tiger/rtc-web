@@ -15,4 +15,4 @@ pre-push:
         node scripts/prevent-direct-push.js
 
     typecheck:
-      run: pnpm type-check
+      run: pnpm typecheck
