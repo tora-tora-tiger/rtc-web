@@ -140,7 +140,7 @@ export function ScreenShare() {
         console.error("📍 エラー詳細:", error);
       }
     }
-  }
+  };
 
   const onClickButtton = async () => {
     // 画面共有中の場合は停止処理
@@ -156,7 +156,7 @@ export function ScreenShare() {
     console.log("🔌 Socket.io接続とイベントの設定を開始します");
 
     // Socket.ioの初期化
-    const socket = io("http://localhost:3001", {
+    const socket = io(import.meta.env.VITE_SIGNALING_ADDRESS, {
       autoConnect: true, // 自動接続を有効化
       transports: ["websocket", "polling"], // トランスポートを明示
     });
