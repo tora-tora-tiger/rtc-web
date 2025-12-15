@@ -1,0 +1,6 @@
+pre-push:
+  parallel: true
+  commands:
+    prevent-direct-push:
+      run: |
+        node scripts/prevent-direct-push.js
