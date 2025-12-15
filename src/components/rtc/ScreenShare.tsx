@@ -17,7 +17,10 @@ export function ScreenShare() {
 
     // ローカルストリームのトラックを停止
     if (localStreamRef.current) {
-      console.log("📍 ローカルストリームのトラック数:", localStreamRef.current.getTracks().length);
+      console.log(
+        "📍 ローカルストリームのトラック数:",
+        localStreamRef.current.getTracks().length
+      );
       localStreamRef.current.getTracks().forEach((track) => {
         console.log("🛑 トラックを停止:", track.kind, track.label);
         track.stop();
@@ -35,13 +38,7 @@ export function ScreenShare() {
     console.log("✅ 画面共有を停止しました");
   };
 
-  const onClickButtton = async () => {
-    // 画面共有中の場合は停止処理
-    if (isSharing) {
-      await stopScreenShare();
-      return;
-    }
-
+  const startScreenShare = async () => {
     // 接続が確立されるまで待機
     if (!socketRef.current?.connected) {
       console.log("⏳ Socket接続を待機します...");
@@ -142,6 +139,15 @@ export function ScreenShare() {
       if (error instanceof Error) {
         console.error("📍 エラー詳細:", error);
       }
+    }
+  }
+
+  const onClickButtton = async () => {
+    // 画面共有中の場合は停止処理
+    if (isSharing) {
+      stopScreenShare();
+    } else {
+      startScreenShare();
     }
   };
 
