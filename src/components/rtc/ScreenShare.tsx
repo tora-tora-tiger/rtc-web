@@ -182,6 +182,8 @@ export function ScreenShare() {
         console.log("🎬 トラックを受信しました", track);
 
         let mediaElement: HTMLVideoElement | HTMLAudioElement | null = null;
+        const mediaStream = new MediaStream([track]);
+
 
         if (track.kind === "video") {
           console.log("📹 映像トラックの処理を開始します");
@@ -190,6 +192,7 @@ export function ScreenShare() {
           video.playsInline = true;
           video.muted = true;
           video.style.width = "100%";
+          video.srcObject = mediaStream;
 
           video
             .play()
@@ -215,6 +218,7 @@ export function ScreenShare() {
           console.log("🔊 音声トラックの処理を開始します");
           const audio = document.createElement("audio");
           mediaElement = audio;
+          audio.srcObject = mediaStream;
 
           audio
             .play()
@@ -239,6 +243,8 @@ export function ScreenShare() {
         track.addEventListener("ended", () => {
           console.log("🛑 トラックが終了しました", track);
           if (mediaElement) {
+            mediaElement.pause();
+            mediaElement.srcObject = null;
             mediaElement.remove();
           }
         });
