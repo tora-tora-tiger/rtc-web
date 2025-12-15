@@ -240,9 +240,14 @@
 
 .connection-status {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  align-items: start;
+  gap: 0;
   font-size: 0.9rem;
+}
+
+.connection-status p {
+  margin: 0;
 }
 
 .status-dot {

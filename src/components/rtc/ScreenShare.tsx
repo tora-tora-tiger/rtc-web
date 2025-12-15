@@ -3,7 +3,7 @@ import io from "socket.io-client";
 import "./ScreenShare.css";
 
 export function ScreenShare() {
-  const [isConnected, setIsConnected] = useState(false);
+  const [isWsConnected, setIsWsConnected] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideosRef = useRef<HTMLDivElement>(null);
@@ -11,6 +11,11 @@ export function ScreenShare() {
   const localStreamRef = useRef<MediaStream | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const socketRef = useRef<ReturnType<typeof io>>(null);
+
+  // debug
+  const [pcConnectionState, setPcConnectionState] = useState<string>("closed");
+  const [iceConnectionState, setIceConnectionState] =
+    useState<string>("closed");
 
   const stopScreenShare = async () => {
     console.log("🛑 画面共有を停止します");
@@ -171,14 +176,6 @@ export function ScreenShare() {
 
     console.log("📍 Socketオブジェクト:", socket);
 
-    // 接続状態の継続的監視
-    const connectionMonitor = setInterval(() => {
-      console.log(
-        `📍[${new Date().toISOString()}] 接続状態監視: connected=${
-          socket.connected
-        }, id=${socket.id}`
-      );
-    }, 2000);
     // リモートユーザーがPeerConnectionにMediaStreamTrackを追加したら発火
     if (pcRef.current) {
       pcRef.current.addEventListener("track", ({ track }) => {
@@ -268,12 +265,30 @@ export function ScreenShare() {
           console.log("📍 PeerConnection状態:", pcRef.current);
         }
       });
+
+      pc.addEventListener("connectionstatechange", () => {
+        if (!pcRef.current) return;
+        setPcConnectionState(pcRef.current.connectionState);
+        console.log(
+          "🔄 PeerConnectionの接続状態が変化しました:",
+          pcRef.current.connectionState
+        );
+      });
+
+      pc.addEventListener("iceconnectionstatechange", () => {
+        if (!pcRef.current) return;
+        setIceConnectionState(pcRef.current.iceConnectionState);
+        console.log(
+          "🔄 ICE接続状態が変化しました:",
+          pcRef.current.iceConnectionState
+        );
+      });
     }
 
     // Socket.ioイベントリスナーの設定
     socket.on("connect", () => {
       console.log("✅ Socket.io接続が確立されました", socket);
-      setIsConnected(true);
+      setIsWsConnected(true);
     });
 
     socket.io.on("open", () => {
@@ -306,7 +321,7 @@ export function ScreenShare() {
       console.log("📍 切断理由:", reason);
       console.log("📍 Socket ID:", socket.id);
       console.log("📍 接続状態:", socket.connected);
-      setIsConnected(false);
+      setIsWsConnected(false);
     });
 
     socket.on("connect_error", (error) => {
@@ -427,10 +442,6 @@ export function ScreenShare() {
       pcRef.current?.close();
       console.log("✅ RTCPeerConnectionを閉じました");
 
-      // 接続状態監視を停止
-      clearInterval(connectionMonitor);
-      console.log("✅ 接続状態監視を停止しました");
-
       // Socketを切断
       socket.disconnect();
       console.log("✅ Socketを切断しました");
@@ -456,7 +467,11 @@ export function ScreenShare() {
   return (
     <div className="screen-share-container">
       <div className="connection-status">
-        接続状態: {isConnected ? "接続中" : "切断中"}
+        Websocket
+        <p>接続状態: {isWsConnected ? "接続中" : "切断中"}</p>
+        PeerConnection
+        <p>接続状態: {pcConnectionState}</p>
+        <p>ice接続状態: {iceConnectionState}</p>
       </div>
 
       <button
