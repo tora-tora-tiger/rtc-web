@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
+import { RemoteVideo } from "./RemoteVideo";
 import "./ScreenShare.css";
 
 export function ScreenShare() {
   const [isWsConnected, setIsWsConnected] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideosRef = useRef<HTMLDivElement>(null);
   const remoteAudioRef = useRef<HTMLDivElement>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
@@ -16,6 +16,17 @@ export function ScreenShare() {
   const [pcConnectionState, setPcConnectionState] = useState<string>("closed");
   const [iceConnectionState, setIceConnectionState] =
     useState<string>("closed");
+
+  // リモートビデオ管理
+  const [remoteVideoTracks, setRemoteVideoTracks] = useState<MediaStreamTrack[]>([]);
+  const remoteVideoKeysRef = useRef<string[]>([]);
+
+  // リモートビデオを削除するヘルパー関数
+  const removeRemoteVideo = (trackId: string) => {
+    console.log(`🗑️ リモートビデオを削除します: ${trackId}`);
+    setRemoteVideoTracks(prev => prev.filter(track => track.id !== trackId));
+    remoteVideoKeysRef.current = remoteVideoKeysRef.current.filter(key => key !== trackId);
+  };
 
   const stopScreenShare = async () => {
     console.log("🛑 画面共有を停止します");
@@ -181,43 +192,22 @@ export function ScreenShare() {
       pcRef.current.addEventListener("track", ({ track }) => {
         console.log("🎬 トラックを受信しました", track);
 
-        let mediaElement: HTMLVideoElement | HTMLAudioElement | null = null;
-        const mediaStream = new MediaStream([track]);
-
-
         if (track.kind === "video") {
-          console.log("📹 映像トラックの処理を開始します");
-          const video = document.createElement("video");
-          mediaElement = video;
-          video.playsInline = true;
-          video.muted = true;
-          video.style.width = "100%";
-          video.srcObject = mediaStream;
-
-          video
-            .play()
-            .then(() => {
-              console.log("✅ リモート映像の再生開始");
-              if (remoteVideosRef.current) {
-                remoteVideosRef.current.appendChild(video);
-                console.log("✅ 映像要素をDOMに追加しました");
-                console.log(
-                  "📍 リモート映像要素数:",
-                  remoteVideosRef.current.children.length
-                );
-              } else {
-                console.error("❌ remoteVideosRef.currentがnullです");
-              }
-            })
-            .catch((playError) => {
-              console.error("❌ リモート映像の再生エラー:", playError);
-            });
+          console.log("📹 映像トラックを管理に追加します");
+          // 同じtrackIDが既に存在する場合は追加しない
+          if (!remoteVideoKeysRef.current.includes(track.id)) {
+            setRemoteVideoTracks(prev => [...prev, track]);
+            remoteVideoKeysRef.current.push(track.id);
+            console.log("✅ リモート映像トラックを追加しました");
+          } else {
+            console.log("ℹ️ トラックが既に存在するためスキップします");
+          }
         }
 
         if (track.kind === "audio") {
           console.log("🔊 音声トラックの処理を開始します");
           const audio = document.createElement("audio");
-          mediaElement = audio;
+          const mediaStream = new MediaStream([track]);
           audio.srcObject = mediaStream;
 
           audio
@@ -238,16 +228,17 @@ export function ScreenShare() {
             .catch((playError) => {
               console.error("❌ リモート音声の再生エラー:", playError);
             });
-        }
 
-        track.addEventListener("ended", () => {
-          console.log("🛑 トラックが終了しました", track);
-          if (mediaElement) {
-            mediaElement.pause();
-            mediaElement.srcObject = null;
-            mediaElement.remove();
-          }
-        });
+          // 音声トラックの終了イベント
+          track.addEventListener("ended", () => {
+            console.log("🔊 音声トラックが終了しました", track);
+            if (audio) {
+              audio.pause();
+              audio.srcObject = null;
+              audio.remove();
+            }
+          });
+        }
       });
 
       // RTCPeerConnection.setLocalDescription()の呼び出しに応じて、
@@ -272,7 +263,7 @@ export function ScreenShare() {
         }
       });
 
-      pc.addEventListener("connectionstatechange", () => {
+      pcRef.current.addEventListener("connectionstatechange", () => {
         if (!pcRef.current) return;
         setPcConnectionState(pcRef.current.connectionState);
         console.log(
@@ -281,7 +272,7 @@ export function ScreenShare() {
         );
       });
 
-      pc.addEventListener("iceconnectionstatechange", () => {
+      pcRef.current.addEventListener("iceconnectionstatechange", () => {
         if (!pcRef.current) return;
         setIceConnectionState(pcRef.current.iceConnectionState);
         console.log(
@@ -498,7 +489,15 @@ export function ScreenShare() {
 
         <div className="remote-videos">
           <h3>リモート映像</h3>
-          <div ref={remoteVideosRef} className="remote-videos-container" />
+          <div className="remote-videos-container">
+            {remoteVideoTracks.map((track) => (
+              <RemoteVideo
+                key={track.id}
+                track={track}
+                onTrackEnded={() => removeRemoteVideo(track.id)}
+              />
+            ))}
+          </div>
         </div>
 
         <div className="remote-audios">
