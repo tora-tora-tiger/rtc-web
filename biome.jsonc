@@ -1,12 +1,12 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.3.8/schema.json",
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "vcs": {
     "enabled": false,
     "clientKind": "git",
     "useIgnoreFile": false
   },
   "files": {
-    "includes": ["**", "!!**/dist", "!!wailsjs"],
+    "includes": ["**", "!!**/dist"],
     "ignoreUnknown": true
   },
   "formatter": {
