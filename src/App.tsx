@@ -1,11 +1,7 @@
 import { ScreenShare } from "./components/rtc/ScreenShare";
 
 function App() {
-  return (
-    <>
-      <ScreenShare />
-    </>
-  );
+  return <ScreenShare />;
 }
 
 export default App;

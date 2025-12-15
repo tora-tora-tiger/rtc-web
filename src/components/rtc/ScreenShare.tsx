@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
 import "./ScreenShare.css";
 
-
 export function ScreenShare() {
   const [isConnected, setIsConnected] = useState(false);
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -28,9 +27,9 @@ export function ScreenShare() {
         console.log(
           `📍 接続待機 ${attempts + 1}/${maxAttempts}: connected=${
             socket.connected
-          }`
+          }`,
         );
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 500));
         attempts++;
       }
 
@@ -126,7 +125,7 @@ export function ScreenShare() {
       console.log(
         `📍[${new Date().toISOString()}] 接続状態監視: connected=${
           socket.connected
-        }, id=${socket.id}`
+        }, id=${socket.id}`,
       );
     }, 2000);
     // リモートユーザーがPeerConnectionにMediaStreamTrackを追加したら発火
@@ -150,13 +149,13 @@ export function ScreenShare() {
               console.log("✅ 映像要素をDOMに追加しました");
               console.log(
                 "📍 リモート映像要素数:",
-                remoteVideosRef.current.children.length
+                remoteVideosRef.current.children.length,
               );
             } else {
               console.error("❌ remoteVideosRef.currentがnullです");
             }
           })
-          .catch((playError) => {
+          .catch(playError => {
             console.error("❌ リモート映像の再生エラー:", playError);
           });
       }
@@ -175,13 +174,13 @@ export function ScreenShare() {
               console.log("✅ 音声要素をremoteAudioRefに追加しました");
               console.log(
                 "📍 リモート音声要素数:",
-                remoteAudioRef.current.children.length
+                remoteAudioRef.current.children.length,
               );
             } else {
               console.error("❌ remoteAudioRef.currentがnullです");
             }
           })
-          .catch((playError) => {
+          .catch(playError => {
             console.error("❌ リモート音声の再生エラー:", playError);
           });
       }
@@ -223,20 +222,20 @@ export function ScreenShare() {
       console.log("🔓 Socket.io Engineが開かれました", socket);
     });
 
-    socket.io.on("close", (reason) => {
+    socket.io.on("close", reason => {
       console.log("🔒 Socket.io Engineが閉じられました", reason, socket);
     });
 
-    socket.io.on("error", (error) => {
+    socket.io.on("error", error => {
       console.error("❌ Socket.io Engineエラー:", error);
     });
 
-    socket.io.on("reconnect", (attemptNumber) => {
+    socket.io.on("reconnect", attemptNumber => {
       console.log("🔄 Socket.io再接続成功");
       console.log("📍 試行回数:", attemptNumber);
     });
 
-    socket.io.on("reconnect_attempt", (attemptNumber) => {
+    socket.io.on("reconnect_attempt", attemptNumber => {
       console.log(`🔄 Socket.io再接続試行 ${attemptNumber}`);
     });
 
@@ -244,7 +243,7 @@ export function ScreenShare() {
       console.error("❌ Socket.io再接続失敗");
     });
 
-    socket.on("disconnect", (reason) => {
+    socket.on("disconnect", reason => {
       console.log("❌ Socket.io接続が切断されました");
       console.log("📍 切断理由:", reason);
       console.log("📍 Socket ID:", socket.id);
@@ -252,13 +251,13 @@ export function ScreenShare() {
       setIsConnected(false);
     });
 
-    socket.on("connect_error", (error) => {
+    socket.on("connect_error", error => {
       console.error("❌ Socket.io接続エラー:", error);
       console.error("📍 エラーメッセージ:", error.message);
       console.error("📍 エラーオブジェクト:", error);
     });
 
-    socket.on("offer", async (desc) => {
+    socket.on("offer", async desc => {
       console.log("📥 Offerを受信しました", desc);
       console.log("📍 受信時のPeerConnection状態:", pc);
 
@@ -291,12 +290,12 @@ export function ScreenShare() {
     });
 
     // リモートユーザーのanswerイベントを受信し、RemoteDescriptionをPeerConnectionにセット
-    socket.on("answer", async (desc) => {
+    socket.on("answer", async desc => {
       console.log("📥 Answerを受信しました");
       console.log("📍 Answerタイプ:", desc.type);
       console.log(
         "📍 Answer SDP（先頭50文字）:",
-        desc.sdp?.substring(0, 50) + "..."
+        desc.sdp?.substring(0, 50) + "...",
       );
       console.log("📍 受信時のPeerConnection状態:", pc.connectionState);
       console.log("📍 受信時のICE接続状態:", pc.iceConnectionState);
@@ -317,7 +316,7 @@ export function ScreenShare() {
     });
 
     // リモートユーザーのiceイベントを受信し、ICE Candidateを追加
-    socket.on("ice", async (candidate) => {
+    socket.on("ice", async candidate => {
       console.log("📥 ICE Candidateを受信しました");
       console.log("📍 Candidate:", candidate);
       console.log("📍 受信時のPeerConnection状態:", pc.connectionState);
@@ -355,9 +354,9 @@ export function ScreenShare() {
       if (localStreamRef.current) {
         console.log(
           "📍 ローカルストリームのトラック数:",
-          localStreamRef.current.getTracks().length
+          localStreamRef.current.getTracks().length,
         );
-        localStreamRef.current.getTracks().forEach((track) => {
+        localStreamRef.current.getTracks().forEach(track => {
           console.log("🛑 トラックを停止:", track.kind, track.label);
           track.stop();
         });
@@ -401,4 +400,4 @@ export function ScreenShare() {
       </div>
     </div>
   );
-};
+}
