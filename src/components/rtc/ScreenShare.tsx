@@ -25,6 +25,7 @@ export function ScreenShare() {
         console.log("🛑 トラックを停止:", track.kind, track.label);
         track.stop();
       });
+
       localStreamRef.current = null;
     }
 
@@ -183,13 +184,15 @@ export function ScreenShare() {
       pcRef.current.addEventListener("track", ({ track }) => {
         console.log("🎬 トラックを受信しました", track);
 
+        let mediaElement: HTMLVideoElement | HTMLAudioElement | null = null;
+
         if (track.kind === "video") {
           console.log("📹 映像トラックの処理を開始します");
           const video = document.createElement("video");
+          mediaElement = video;
           video.playsInline = true;
           video.muted = true;
           video.style.width = "100%";
-          video.srcObject = new MediaStream([track]);
 
           video
             .play()
@@ -214,7 +217,7 @@ export function ScreenShare() {
         if (track.kind === "audio") {
           console.log("🔊 音声トラックの処理を開始します");
           const audio = document.createElement("audio");
-          audio.srcObject = new MediaStream([track]);
+          mediaElement = audio;
 
           audio
             .play()
@@ -235,6 +238,13 @@ export function ScreenShare() {
               console.error("❌ リモート音声の再生エラー:", playError);
             });
         }
+
+        track.addEventListener("ended", () => {
+          console.log("🛑 トラックが終了しました", track);
+          if (mediaElement) {
+            mediaElement.remove();
+          }
+        });
       });
 
       // RTCPeerConnection.setLocalDescription()の呼び出しに応じて、
